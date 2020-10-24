@@ -13,6 +13,8 @@ pacman::p_load(tidyverse,tidyquant,FFdownload,PortfolioAnalytics,nloptr)
 **Please** remember to put your assignment solutions in `rmd` format using **many** chunks and putting readable text in between, similar to my examples given in Research Methods and Assignment 1! Also, each student has to select his own set of 10 stocks having data available as of `2000-01-01`. Select by Sharpe-ratio, dominance or any other method (e.g. matching your first name).
 
 For all exercises: Please use the Assignment-Forum to post your questions, I will try my best to help you along!
+
+# revised Exercise 1
   
 ## Exercise 1: Constraints
   
@@ -105,6 +107,8 @@ returns_gmv <- Return.portfolio(R = R, weights = extractWeights(bt_gmv))
 ```
 
 #### Mininum Variance Portfolio with Long Only Constraint. 
+
+#### Mininum Variance Portfolio with long only constraint and full investment constraint
 
 Now, we add the long only constraint - we do not allow for short selling. 
 ```{r}
@@ -220,6 +224,13 @@ opt_minvar_4 <- optimize.portfolio(R=R, portfolio=portf_minvar_4,
 print(opt_minvar_4)
 ```
 
+Next, we chart the efficient frontiers. 
+```{r}
+portf_minvaref_4 <- create.EfficientFrontier(R=R, portfolio = portf_minvar_4, type = "mean-StdDev", match.col = "StdDev")
+chart.EfficientFrontier(portf_minvaref_4, match.col = "StdDev", type = "b", rf = NULL, pch.assets = 1)
+```
+
+
 Now, we rebalance it with training period = 24 (2 years).
 ```{r}
 bt_minvar_4 <- optimize.portfolio.rebalancing(R=R, portfolio=portf_minvar_4,
@@ -233,20 +244,48 @@ chart.Weights(bt_minvar_4)
 returns_minvar <- Return.portfolio(R=R, weights=extractWeights(bt_minvar_4))
 ```
 
+### plot of the weights minimum variance portfolios with our constraints
+
+
+```{r}
+print(opt_gmv)
+print(opt_minvar_2)
+print(opt_minvar_3)
+print(opt_minvar_4)
+```
+
+```{r}
+chart.EfficientFrontier(portf_minvaref, match.col = "StdDev", type = "b", rf = NULL, pch.assets = 1,main="efficient frontier - full investment")
+chart.EfficientFrontier(portf_minvaref_2, match.col = "StdDev", type = "b", rf = NULL, pch.assets = 1, main="efficient frontier - long only")
+chart.EfficientFrontier(portf_minvaref_3, match.col = "StdDev", type = "b", rf = NULL, pch.assets = 1, main="efficient frontier - group constraint")
+chart.EfficientFrontier(portf_minvaref_4, match.col = "StdDev", type = "b", rf = NULL, pch.assets = 1, main="efficient frontier - group constraint & long only")
+```
+
+```{r}
+chart.Weights(bt_gmv)
+title(main = "Mininum Variance Portfolio with Full investment Constraint")
+chart.Weights(bt_minvar_2)
+title(main = "Mininum Variance Portfolio with long only constraint and full investment constraint")
+chart.Weights(bt_minvar_3)
+title(main = "Mininum Variance Portfolio Group Constraints")
+chart.Weights(bt_minvar_4)
+title(main = "Mininum Variance Portfolio Group Constraint + box constraint")
+```
+
+
 b) Maximum Quadratic Utility Portfolios
 
-### Maximum Quadratic Utility Portfolio with full investment constraint and long only constraint
+### Maximum Quadratic Utility Portfolio with full investment constraint (now we deleted it) and long only constraint
 
 First, we create the initial portfolio object.
 ```{r}
 init_portf <- portfolio.spec(assets=stockselection)
 ```
 
-Then, we create our constraints and cominbe them in a list. 
+Then, we create our constraints and combine them in a list. 
 ```{r}
-fi_constr <- weight_sum_constraint(type="full_investment")
 lo_constr <- box_constraint(type="long_only", assets=init_portf$assets)
-qu_constr <- list(fi_constr, lo_constr)
+qu_constr <- list(lo_constr)
 ```
 
 Next, we create the objective. The variance objective specifies a risk aversion parameter which defines how much variance is accepted. 
@@ -254,7 +293,7 @@ After that, we combine these objectives in a list.
 ```{r}
 ret_obj <- return_objective(name="mean")
 
-var_obj <- portfolio_risk_objective(name="var", risk_aversion=4.00)
+var_obj <- portfolio_risk_objective(name="var", risk_aversion=2.00)
 qu_obj <- list(ret_obj, var_obj)
 ```
 
@@ -312,7 +351,7 @@ qu_constr_2 <- list(group_constr)
 Next, we create the return objectives. We use the same as before.  
 ````{r}
 ret_obj <- return_objective(name="mean")
-var_obj <- portfolio_risk_objective(name="var", risk_aversion=4.00)
+var_obj <- portfolio_risk_objective(name="var", risk_aversion=2.00)
 qu_obj <- list(ret_obj, var_obj)
 ```
 
@@ -357,7 +396,7 @@ qu_constr_3 <- list(ret_constr)
 Next, we create the return objectives. We use the same as before.  
 ````{r}
 ret_obj <- return_objective(name="mean")
-var_obj <- portfolio_risk_objective(name="var", risk_aversion=4.00)
+var_obj <- portfolio_risk_objective(name="var", risk_aversion=2.00)
 qu_obj <- list(ret_obj, var_obj)
 ```
 
@@ -394,16 +433,31 @@ We create our second portfolio object.
 init_portf_4 <- portfolio.spec(assets=stockselection)
 ```
 
+-"AMZN" = 1.35
+-"ADBE" = 0.97
+-"MSFT" = 0.92
+-"JNJ"  = 0.69
+-"PG"   = 0.41
+-"AXP"  = 1.13
+-"BAC"  = 1.55
+-"AAPL" = 1.31
+-"T"    = 1
+-"CAT"  = 1.03
+
+
+
+1.35, 0.97, 0.92, 0.69, 0.41, 1.13, 1.55, 1.31, 1, 1.03
+
 Now, we add the constraint and combine them in a list. 
 ```{r}
-exp_constr <- factor_exposure_constraint(assets=stockselection,B=c(-0.08, 0.37, 0.79, 1.43, 0.34, 1.2, 0.79, 1.12, 0.94, 1.23),lower=0.6, upper=0.9)
+exp_constr <- factor_exposure_constraint(assets=stockselection,B=c(1.35, 0.97, 0.92, 0.69, 0.41, 1.13, 1.55, 1.31, 1, 1.03),lower=0.6, upper=0.9)
 qu_constr_4 <- list(exp_constr)
 ```
 
 Next, we create the return objectives. We use the same as before.  
 ````{r}
 ret_obj <- return_objective(name="mean")
-var_obj <- portfolio_risk_objective(name="var", risk_aversion=4.00)
+var_obj <- portfolio_risk_objective(name="var", risk_aversion=2.00)
 qu_obj <- list(ret_obj, var_obj)
 ```
 
@@ -431,7 +485,30 @@ chart.Weights(bt_qu_4)
 returns_qu_4 <- Return.portfolio(R = R, weights = extractWeights(bt_qu_4))
 ```
 
-Constraints that do not work with ROI
+### plots of the maximum quadratic utility portfolios
+
+
+```{r}
+opt_qu
+opt_qu_2
+opt_qu_3
+opt_qu_4
+```
+
+```{r}
+chart.Weights(bt_qu)
+title(main="long only")
+chart.Weights(bt_qu_2)
+title(main="group constraint")
+chart.Weights(bt_qu_3)
+title(main="target return constraint")
+chart.Weights(bt_qu_4)
+title(main="factor exposure constraint")
+```
+
+
+
+### Constraints that do not work with ROI
 - position limit constraints
 - diversification constraint
 - turnover constraint
